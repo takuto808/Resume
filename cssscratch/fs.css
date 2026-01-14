@@ -1,0 +1,65 @@
+.head1{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 50px;
+    font-weight: bold;
+    color: rgb(68, 68, 68);
+}
+
+.head2{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 40px;
+    font-weight: bold;
+    color: rgb(68, 68, 68);
+}
+
+.head3{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 35px;
+    font-weight: bold;
+    color: rgb(68, 68, 68);
+}
+
+.head4{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 30px;
+    font-weight: bold;
+    color: rgb(68, 68, 68);
+}
+
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 25px;
+    color: rgb(82, 82, 82);
+}
+
+a{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 30px;
+    font-weight: bold;
+    color: rgb(131, 83, 83);
+    text-decoration: none;
+}
+
+.name{
+    text-align: center;
+    font-size: 80px;
+}
+
+.title1{
+    text-align: center;
+}
+
+
+.margin0{
+    margin-left: 15%;
+    margin-right: 15%;
+}
+
+a:hover{
+    text-decoration: underline;
+}
+
+ul{
+    color: rgb(95, 95, 95); 
+    font-size: 20px;
+}

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conversation Cards</title>
+  <style>
+    body {
+      margin: 0;
+      font-family:Arial, Helvetica, sans-serif;
+      font-weight: bold;
+      background: linear-gradient(135deg, #8c4e37, #ffad77);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .screen {
+      display: none;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 24px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 440px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.4s ease;
+    }
+
+    .screen.active { display: block; }
+
+    h1 { text-align: center; margin-bottom: 16px; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: bold;
+      cursor: pointer;
+      background: #fff;
+      color: #333;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: scale(0.98); opacity: 0.9; }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .flashcard {
+      background: #fff;
+      color: #333;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      font-size: 18px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: bold;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+    }
+
+    .counter { text-align: center; font-size: 14px; opacity: 0.8; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<div id="home" class="screen active">
+  <h1>Conversation Cards</h1>
+  <select id="category">
+    <option value="ice">Ice Breaking</option>
+    <option value="friends">Friends</option>
+    <option value="partner">Partner</option>
+    <option value="family">Family</option>
+    <option value="deep">Deeper Conversation</option>
+  </select>
+  <button onclick="startGame()">Start</button>
+</div>
+
+<div id="game" class="screen">
+  <div class="flashcard" id="card"></div>
+  <div class="counter" id="counter"></div>
+  <button onclick="nextCard()">Next</button>
+  <button onclick="shuffleAgain()">Shuffle Again</button>
+  <button onclick="goHome()">End Game</button>
+</div>
+
+<script>
+const PROMPTS = {
+  ice: [
+  // Depth 1 (20 prompts)
+  {text:"What’s something small that made you smile recently?",depth:1},
+  {text:"What’s your favorite way to spend a free afternoon?",depth:1},
+  {text:"What’s a simple pleasure you enjoy?",depth:1},
+  {text:"What’s a place that feels comforting to you?",depth:1},
+  {text:"What’s a routine you enjoy?",depth:1},
+  {text:"What’s a sound or smell you find comforting?",depth:1},
+  {text:"What’s something that helps you relax?",depth:1},
+  {text:"What’s a small habit you appreciate?",depth:1},
+  {text:"What’s a casual moment you enjoy during the day?",depth:1},
+  {text:"What’s a light activity that lifts your mood?",depth:1},
+  {text:"What’s your favorite season and why?",depth:1},
+  {text:"What’s a favorite childhood memory?",depth:1},
+  {text:"What’s a small thing that brings you joy every day?",depth:1},
+  {text:"Do you prefer mornings or evenings?",depth:1},
+  {text:"What’s a hobby you enjoy doing alone?",depth:1},
+  {text:"What’s your favorite comfort food?",depth:1},
+  {text:"What kind of music makes you happy?",depth:1},
+  {text:"What’s a funny story from your past?",depth:1},
+  {text:"What’s something that always makes you laugh?",depth:1},
+  {text:"What’s a skill you’ve recently learned?",depth:1},
+
+  // Depth 2 (20 prompts)
+  {text:"Have you ever had an unexpected compliment?",depth:2},
+  {text:"What’s a recent discovery that surprised you?",depth:2},
+  {text:"Have you ever helped a stranger and how did it feel?",depth:2},
+  {text:"What’s a small act of kindness you remember?",depth:2},
+  {text:"Have you ever faced a challenge that turned out well?",depth:2},
+  {text:"What’s a habit that improves your day?",depth:2},
+  {text:"What’s a moment when you felt proud of yourself?",depth:2},
+  {text:"What’s a pet peeve you find amusing?",depth:2},
+  {text:"What’s a small dream you hope to fulfill?",depth:2},
+  {text:"What’s a place that always makes you feel peaceful?",depth:2},
+  {text:"Who is someone you recently admired?",depth:2},
+  {text:"What’s a positive experience that changed your perspective?",depth:2},
+  {text:"What’s a simple pleasure that relaxes you?",depth:2},
+  {text:"Have you ever learned something new unexpectedly?",depth:2},
+  {text:"What’s a small risk you took that paid off?",depth:2},
+  {text:"What’s a moment when someone surprised you kindly?",depth:2},
+  {text:"What’s something that lifted your spirits recently?",depth:2},
+  {text:"What’s a hobby you wish you could do more often?",depth:2},
+  {text:"What’s a fun activity you enjoy with others?",depth:2},
+  {text:"Have you ever had a moment of pure luck?",depth:2},
+
+  // Depth 3 (20 prompts)
+  {text:"What’s a meaningful conversation you had recently?",depth:3},
+  {text:"Have you ever learned something important from failure?",depth:3},
+  {text:"What’s a recent moment that made you feel grateful?",depth:3},
+  {text:"Have you ever felt a sudden burst of inspiration?",depth:3},
+  {text:"What’s a lesson you learned the hard way?",depth:3},
+  {text:"What’s a small risk you took that taught you something?",depth:3},
+  {text:"What’s something you’ve done that surprised yourself?",depth:3},
+  {text:"Have you ever witnessed an act of courage?",depth:3},
+  {text:"What’s a personal insight you gained recently?",depth:3},
+  {text:"What’s a habit that makes your life better?",depth:3},
+  {text:"What’s a challenge you overcame that you’re proud of?",depth:3},
+  {text:"Have you ever helped someone and felt deeply rewarded?",depth:3},
+  {text:"What’s a meaningful lesson you recently learned?",depth:3},
+  {text:"What’s a small change that had a significant impact?",depth:3},
+  {text:"Have you ever felt truly content unexpectedly?",depth:3},
+  {text:"What’s a goal you achieved that felt meaningful?",depth:3},
+  {text:"What inspires you in your daily life?",depth:3},
+  {text:"What’s something you hope to improve about yourself?",depth:3},
+  {text:"What’s a recent realization about someone close to you?",depth:3},
+  {text:"Have you ever had a moment of clarity about life?",depth:3},
+
+  // Depth 4 (20 prompts)
+  {text:"What’s a belief you hold that guides your actions?",depth:4},
+  {text:"What’s something you learned about yourself this year?",depth:4},
+  {text:"Have you ever made a choice that changed your path?",depth:4},
+  {text:"What’s an experience that made you reflect deeply?",depth:4},
+  {text:"What’s a fear you overcame recently?",depth:4},
+  {text:"What’s a small change that had a big impact on you?",depth:4},
+  {text:"Have you ever felt completely present in a moment?",depth:4},
+  {text:"What’s a goal that feels deeply meaningful?",depth:4},
+  {text:"Have you ever had a profound conversation with a stranger?",depth:4},
+  {text:"What’s a value you prioritize above all else?",depth:4},
+  {text:"What’s a decision that shaped who you are today?",depth:4},
+  {text:"What’s a habit that changed your perspective?",depth:4},
+  {text:"Have you ever felt a deep connection unexpectedly?",depth:4},
+  {text:"What’s a moment that made you rethink a belief?",depth:4},
+  {text:"What’s a lesson from a mistake that changed you?",depth:4},
+  {text:"What’s a small gesture that had a big emotional impact?",depth:4},
+  {text:"Have you ever felt completely understood?",depth:4},
+  {text:"What’s a risk you took that reshaped your life?",depth:4},
+  {text:"Have you ever experienced a moment of awe?",depth:4},
+  {text:"What’s a choice you made that challenged your comfort zone?",depth:4},
+
+  // Depth 5 (20 prompts)
+  {text:"What does meaningful connection mean to you?",depth:5},
+  {text:"What helps you feel truly understood?",depth:5},
+  {text:"What’s a belief that guides your life?",depth:5},
+  {text:"How do you define purpose?",depth:5},
+  {text:"What’s a fear that you’ve learned from?",depth:5},
+  {text:"What does happiness feel like to you?",depth:5},
+  {text:"Have you ever had a transformative moment?",depth:5},
+  {text:"What does gratitude feel like for you?",depth:5},
+  {text:"What’s something that deeply moves you?",depth:5},
+  {text:"What does success feel like to you?",depth:5},
+  {text:"What does self-love mean to you?",depth:5},
+  {text:"What’s a personal value you will never compromise?",depth:5},
+  {text:"What’s a life lesson you want to pass on?",depth:5},
+  {text:"What does being present mean to you?",depth:5},
+  {text:"Have you ever experienced a moment of deep clarity?",depth:5},
+  {text:"What’s an experience that reshaped your worldview?",depth:5},
+  {text:"What’s a fear that has taught you resilience?",depth:5},
+  {text:"What inspires you to live fully?",depth:5},
+  {text:"What does vulnerability mean to you?",depth:5},
+  {text:"What’s a meaningful choice you made recently?",depth:5}
+],
+  friends: [
+  // Depth 1 (20 prompts)
+  {text:"What’s a shared memory that always makes you laugh with a friend?",depth:1},
+  {text:"What’s something new you’d like to try with friends?",depth:1},
+  {text:"Who is your go-to friend for advice?",depth:1},
+  {text:"What’s a hobby you enjoy with friends?",depth:1},
+  {text:"What’s a favorite activity you do with friends?",depth:1},
+  {text:"Who do you enjoy spending time with the most?",depth:1},
+  {text:"What’s a place you like to hang out with friends?",depth:1},
+  {text:"What’s a fun tradition you share with friends?",depth:1},
+  {text:"Who always makes you laugh?",depth:1},
+  {text:"What’s a recent outing with friends that was memorable?",depth:1},
+  {text:"What’s a small act of kindness you did for a friend recently?",depth:1},
+  {text:"Who do you feel most comfortable around?",depth:1},
+  {text:"What’s a favorite snack or food you share with friends?",depth:1},
+  {text:"Who inspires you among your friends?",depth:1},
+  {text:"What’s a game or sport you enjoy with friends?",depth:1},
+  {text:"What’s a song you often listen to with friends?",depth:1},
+  {text:"Who’s a friend you’ve known the longest?",depth:1},
+  {text:"What’s a favorite memory from a group activity?",depth:1},
+  {text:"What’s a funny inside joke you share with a friend?",depth:1},
+  {text:"What’s a small thing friends do that makes you happy?",depth:1},
+
+  // Depth 2 (20 prompts)
+  {text:"Have you ever learned something important from a friend?",depth:2},
+  {text:"What’s a time a friend helped you unexpectedly?",depth:2},
+  {text:"How do you support your friends when they’re down?",depth:2},
+  {text:"What’s a recent challenge you faced with a friend?",depth:2},
+  {text:"Have you ever resolved a conflict with a friend positively?",depth:2},
+  {text:"What’s a lesson you learned from a friendship?",depth:2},
+  {text:"Who do you admire among your friends and why?",depth:2},
+  {text:"What’s a time a friend surprised you with kindness?",depth:2},
+  {text:"What’s a moment when a friend made you feel proud?",depth:2},
+  {text:"Have you ever helped a friend overcome a fear?",depth:2},
+  {text:"What’s a small gesture from a friend that touched you?",depth:2},
+  {text:"What’s a favorite trip or outing with friends?",depth:2},
+  {text:"Who’s a friend that has influenced you positively?",depth:2},
+  {text:"What’s a fun activity you want to do with friends soon?",depth:2},
+  {text:"What’s a memorable surprise from a friend?",depth:2},
+  {text:"How do you celebrate successes with friends?",depth:2},
+  {text:"Have you ever grown closer to a friend unexpectedly?",depth:2},
+  {text:"What’s a time a friend made you feel understood?",depth:2},
+  {text:"What’s a shared goal you have with a friend?",depth:2},
+  {text:"What’s a lesson you taught a friend?",depth:2},
+
+  // Depth 3 (20 prompts)
+  {text:"Have you ever had a friendship that changed your perspective?",depth:3},
+  {text:"What’s a meaningful conversation you’ve had with a friend?",depth:3},
+  {text:"Have you ever had a disagreement that strengthened your friendship?",depth:3},
+  {text:"What’s a time a friend inspired you to be better?",depth:3},
+  {text:"What’s a challenge you overcame with a friend’s support?",depth:3},
+  {text:"Who among your friends has taught you something valuable?",depth:3},
+  {text:"What’s a shared experience that deepened your friendship?",depth:3},
+  {text:"Have you ever helped a friend through a difficult decision?",depth:3},
+  {text:"What’s a lesson you learned from observing a friend?",depth:3},
+  {text:"What’s a time a friend helped you see a different perspective?",depth:3},
+  {text:"Have you ever felt gratitude toward a friend deeply?",depth:3},
+  {text:"What’s a friendship that shaped who you are?",depth:3},
+  {text:"What’s a time a friend challenged you positively?",depth:3},
+  {text:"Have you ever felt understood by a friend when no one else could?",depth:3},
+  {text:"What’s a shared adventure that taught you something?",depth:3},
+  {text:"What’s a memory with a friend that always makes you smile?",depth:3},
+  {text:"Who is a friend you can be completely yourself with?",depth:3},
+  {text:"What’s a time a friend encouraged you to take a risk?",depth:3},
+  {text:"Have you ever reconciled with a friend after a long silence?",depth:3},
+  {text:"What’s a friendship lesson you’d like to pass on?",depth:3},
+
+  // Depth 4 (20 prompts)
+  {text:"What’s a friendship that changed your life?",depth:4},
+  {text:"Have you ever had to forgive a friend, and how did it feel?",depth:4},
+  {text:"What’s a time you stood by a friend during a crisis?",depth:4},
+  {text:"How do you define loyalty in friendship?",depth:4},
+  {text:"What’s a value you share with your closest friends?",depth:4},
+  {text:"Have you ever grown apart from a friend, and why?",depth:4},
+  {text:"What does true friendship mean to you?",depth:4},
+  {text:"Have you ever relied on a friend for a major life decision?",depth:4},
+  {text:"What’s a memorable life lesson you learned with a friend?",depth:4},
+  {text:"Have you ever had a friend inspire a significant change in you?",depth:4},
+  {text:"What’s a risk you took because of a friend’s encouragement?",depth:4},
+  {text:"Have you ever learned something profound about yourself from a friend?",depth:4},
+  {text:"What’s a friendship that has lasted despite challenges?",depth:4},
+  {text:"What’s a moment that tested your friendship and strengthened it?",depth:4},
+  {text:"What’s a meaningful tradition with your friends?",depth:4},
+  {text:"Have you ever shared a secret that brought you closer to a friend?",depth:4},
+  {text:"What’s a quality you value most in a friend?",depth:4},
+  {text:"Have you ever experienced unconditional support from a friend?",depth:4},
+  {text:"What’s a lesson about trust from a friendship?",depth:4},
+  {text:"What’s a time you celebrated a milestone with a friend?",depth:4},
+
+  // Depth 5 (20 prompts)
+  {text:"What does friendship mean on the deepest level to you?",depth:5},
+  {text:"What’s a friendship that profoundly impacted your life?",depth:5},
+  {text:"Have you ever had a friend help you discover your true self?",depth:5},
+  {text:"What’s a moment of vulnerability you shared with a friend?",depth:5},
+  {text:"How do your friendships shape your values?",depth:5},
+  {text:"Have you ever felt a friendship saved you emotionally?",depth:5},
+  {text:"What’s a time a friend changed your perspective permanently?",depth:5},
+  {text:"What does unconditional friendship feel like?",depth:5},
+  {text:"Have you ever had a friendship that taught you resilience?",depth:5},
+  {text:"What’s a moment you felt truly supported by a friend?",depth:5},
+  {text:"How do you show deep appreciation to a friend?",depth:5},
+  {text:"What’s a friendship memory that still moves you?",depth:5},
+  {text:"Have you ever felt a friend understand you better than anyone?",depth:5},
+  {text:"What’s a friendship that influenced your life choices?",depth:5},
+  {text:"Have you ever made a sacrifice for a friend?",depth:5},
+  {text:"What’s the most meaningful lesson a friend taught you?",depth:5},
+  {text:"What does trust in friendship truly mean to you?",depth:5},
+  {text:"Have you ever had a friendship that transformed your worldview?",depth:5},
+  {text:"What’s a deep conversation with a friend that you’ll never forget?",depth:5},
+  {text:"How have your friendships helped define who you are?",depth:5}
+],
+partner: [
+  // Depth 1 (20 prompts)
+  {text:"What’s a small gesture from your partner that means a lot to you?",depth:1},
+  {text:"How do you like to spend quality time together?",depth:1},
+  {text:"What’s a favorite shared activity?",depth:1},
+  {text:"What’s a way your partner makes you smile?",depth:1},
+  {text:"What’s a routine you enjoy together?",depth:1},
+  {text:"What’s a fun memory from a recent date?",depth:1},
+  {text:"What’s a song that reminds you of your partner?",depth:1},
+  {text:"What’s a simple moment that feels special with your partner?",depth:1},
+  {text:"What’s a favorite place you’ve been together?",depth:1},
+  {text:"What’s something small your partner does that makes you happy?",depth:1},
+  {text:"What’s a favorite meal you’ve shared together?",depth:1},
+  {text:"What’s a way your partner shows care in daily life?",depth:1},
+  {text:"What’s a recent shared laugh you enjoyed?",depth:1},
+  {text:"What’s a comforting habit you share?",depth:1},
+  {text:"What’s a favorite inside joke between you?",depth:1},
+  {text:"What’s a way your partner surprises you pleasantly?",depth:1},
+  {text:"What’s a favorite activity you do together at home?",depth:1},
+  {text:"What’s a simple word or gesture from your partner that feels loving?",depth:1},
+  {text:"What’s a favorite movie or show you watch together?",depth:1},
+  {text:"What’s a favorite thing about spending weekends together?",depth:1},
+
+  // Depth 2 (20 prompts)
+  {text:"What’s a time your partner helped you in a small but meaningful way?",depth:2},
+  {text:"How do you support each other in daily life?",depth:2},
+  {text:"What’s a way you and your partner handle challenges together?",depth:2},
+  {text:"Have you ever learned something new about each other recently?",depth:2},
+  {text:"What’s a small disagreement you resolved successfully?",depth:2},
+  {text:"How do you show appreciation to each other?",depth:2},
+  {text:"What’s a shared goal you’re working on?",depth:2},
+  {text:"Have you ever surprised each other positively?",depth:2},
+  {text:"What’s a small ritual you both enjoy?",depth:2},
+  {text:"How do you make each other feel safe?",depth:2},
+  {text:"What’s a lesson you’ve learned from your partner?",depth:2},
+  {text:"How do you support each other emotionally?",depth:2},
+  {text:"What’s a recent happy memory together?",depth:2},
+  {text:"Have you ever grown closer through a challenge?",depth:2},
+  {text:"What’s a way your partner makes you feel loved?",depth:2},
+  {text:"What’s a shared activity that strengthens your bond?",depth:2},
+  {text:"What’s a small thing you do to brighten your partner’s day?",depth:2},
+  {text:"What’s a meaningful compliment you received from your partner?",depth:2},
+  {text:"What’s a shared tradition you both enjoy?",depth:2},
+  {text:"How do you celebrate successes together?",depth:2},
+
+  // Depth 3 (20 prompts)
+  {text:"What’s a challenge you’ve faced together and learned from?",depth:3},
+  {text:"What’s a time your partner helped you see a new perspective?",depth:3},
+  {text:"How do you navigate disagreements respectfully?",depth:3},
+  {text:"Have you ever felt deeply supported by your partner?",depth:3},
+  {text:"What’s a shared experience that strengthened your connection?",depth:3},
+  {text:"What’s a lesson about patience you learned from your partner?",depth:3},
+  {text:"How do you encourage each other to grow?",depth:3},
+  {text:"What’s a memorable trip or adventure together?",depth:3},
+  {text:"How do you comfort each other during tough times?",depth:3},
+  {text:"What’s a decision you made together that was important?",depth:3},
+  {text:"Have you ever felt truly understood by your partner?",depth:3},
+  {text:"What’s a shared goal you’ve accomplished together?",depth:3},
+  {text:"How do you inspire each other to be better?",depth:3},
+  {text:"What’s a moment that made you feel deeply connected?",depth:3},
+  {text:"How do you celebrate each other’s achievements?",depth:3},
+  {text:"What’s a meaningful habit you’ve built together?",depth:3},
+  {text:"Have you ever grown from a disagreement?",depth:3},
+  {text:"What’s a way your partner surprises you emotionally?",depth:3},
+  {text:"What’s a time you overcame a challenge as a team?",depth:3},
+  {text:"How do you maintain trust in your relationship?",depth:3},
+
+  // Depth 4 (20 prompts)
+  {text:"How do your partner and you influence each other’s growth?",depth:4},
+  {text:"What does commitment mean to you?",depth:4},
+  {text:"Have you ever had a transformative conversation with your partner?",depth:4},
+  {text:"What’s a fear you shared with each other?",depth:4},
+  {text:"How do you handle vulnerability together?",depth:4},
+  {text:"What’s a lesson you learned about love from your partner?",depth:4},
+  {text:"Have you ever felt completely accepted by your partner?",depth:4},
+  {text:"What does emotional intimacy mean to you?",depth:4},
+  {text:"How do you resolve deeper conflicts together?",depth:4},
+  {text:"Have you ever felt your relationship reshape your perspective?",depth:4},
+  {text:"What’s a shared value that guides your relationship?",depth:4},
+  {text:"How do you encourage each other to take risks?",depth:4},
+  {text:"Have you ever had a shared experience that changed you both?",depth:4},
+  {text:"What does trust feel like in your relationship?",depth:4},
+  {text:"What’s a way your partner has inspired you recently?",depth:4},
+  {text:"How do you grow closer through challenges?",depth:4},
+  {text:"What’s a meaningful choice you made together?",depth:4},
+  {text:"Have you ever felt transformed by your partner’s support?",depth:4},
+  {text:"What’s a time your partner helped you overcome self-doubt?",depth:4},
+  {text:"What does love mean on a deeper level to you?",depth:4},
+
+  // Depth 5 (20 prompts)
+  {text:"What does your relationship mean on the deepest level?",depth:5},
+  {text:"Have you ever experienced unconditional support from your partner?",depth:5},
+  {text:"How has your partner changed your perspective on life?",depth:5},
+  {text:"What’s a moment of vulnerability you shared deeply?",depth:5},
+  {text:"What does emotional intimacy truly feel like to you?",depth:5},
+  {text:"Have you ever felt transformed by your partner’s love?",depth:5},
+  {text:"What’s a choice that strengthened your relationship deeply?",depth:5},
+  {text:"How do your partner and you navigate life’s challenges as a unit?",depth:5},
+  {text:"What does true partnership mean to you?",depth:5},
+  {text:"Have you ever felt fully understood and accepted by your partner?",depth:5},
+  {text:"How do you express deep appreciation for your partner?",depth:5},
+  {text:"What’s a lesson about love you’ve learned together?",depth:5},
+  {text:"Have you ever felt a profound connection that changed you?",depth:5},
+  {text:"What’s a risk you took together that brought growth?",depth:5},
+  {text:"How do you maintain trust and respect at a deep level?",depth:5},
+  {text:"What’s a shared moment that will always be meaningful?",depth:5},
+  {text:"How has your relationship shaped your values?",depth:5},
+  {text:"Have you ever had a transformative experience with your partner?",depth:5},
+  {text:"What does commitment feel like deeply to you?",depth:5},
+  {text:"How do you envision your future together meaningfully?",depth:5}
+],
+family: [
+  // Depth 1 (20 prompts)
+  {text:"What’s a family tradition you cherish?",depth:1},
+  {text:"Who in your family has influenced you the most?",depth:1},
+  {text:"What’s a favorite memory with a family member?",depth:1},
+  {text:"What’s a small act a family member does that makes you happy?",depth:1},
+  {text:"What’s a fun activity you enjoy with family?",depth:1},
+  {text:"What’s a family recipe you love?",depth:1},
+  {text:"Who do you feel closest to in your family?",depth:1},
+  {text:"What’s a favorite family holiday memory?",depth:1},
+  {text:"What’s a simple habit your family shares?",depth:1},
+  {text:"Who always makes you laugh in your family?",depth:1},
+  {text:"What’s a favorite story from your childhood?",depth:1},
+  {text:"What’s a small family ritual you enjoy?",depth:1},
+  {text:"Who do you turn to in your family for advice?",depth:1},
+  {text:"What’s a favorite place to visit with family?",depth:1},
+  {text:"What’s a fun family game or activity?",depth:1},
+  {text:"What’s a tradition you look forward to?",depth:1},
+  {text:"What’s a family habit that makes you feel comforted?",depth:1},
+  {text:"Who in your family inspires you?",depth:1},
+  {text:"What’s a favorite memory of a family gathering?",depth:1},
+  {text:"What’s a small thing your family does that feels special?",depth:1},
+
+  // Depth 2 (20 prompts)
+  {text:"Have you ever learned something important from a family member?",depth:2},
+  {text:"What’s a time your family supported you unexpectedly?",depth:2},
+  {text:"How do you show appreciation to your family?",depth:2},
+  {text:"Have you ever reconciled with a family member after a disagreement?",depth:2},
+  {text:"What’s a lesson you learned from observing family interactions?",depth:2},
+  {text:"Who in your family taught you an important skill?",depth:2},
+  {text:"What’s a way your family has shaped your habits?",depth:2},
+  {text:"Have you ever helped a family member in a meaningful way?",depth:2},
+  {text:"What’s a time you felt proud of your family?",depth:2},
+  {text:"What’s a tradition you’d like to continue with your family?",depth:2},
+  {text:"Have you ever had a memorable adventure with family?",depth:2},
+  {text:"What’s a time your family surprised you positively?",depth:2},
+  {text:"How do you support each other during difficult times?",depth:2},
+  {text:"What’s a moment of laughter you shared recently?",depth:2},
+  {text:"What’s a story you love telling about your family?",depth:2},
+  {text:"Who in your family has taught you about resilience?",depth:2},
+  {text:"What’s a small act of kindness from a family member you remember?",depth:2},
+  {text:"What’s a moment you felt understood by your family?",depth:2},
+  {text:"How do you celebrate milestones together?",depth:2},
+  {text:"What’s a shared hobby or interest with your family?",depth:2},
+
+  // Depth 3 (20 prompts)
+  {text:"What’s a lesson about life you learned from your family?",depth:3},
+  {text:"Have you ever grown closer to a family member unexpectedly?",depth:3},
+  {text:"What’s a challenge your family faced together?",depth:3},
+  {text:"How has your family shaped your values?",depth:3},
+  {text:"What’s a time you felt deep gratitude for your family?",depth:3},
+  {text:"Have you ever had a conversation that changed your perspective on a family member?",depth:3},
+  {text:"What’s a lesson about patience you learned from your family?",depth:3},
+  {text:"What’s a shared experience that strengthened your bond?",depth:3},
+  {text:"Have you ever felt a family member truly understood you?",depth:3},
+  {text:"What’s a moment your family made you feel supported?",depth:3},
+  {text:"What’s a way you contribute positively to your family?",depth:3},
+  {text:"What’s a meaningful memory with multiple family members?",depth:3},
+  {text:"Have you ever resolved a conflict that strengthened a family relationship?",depth:3},
+  {text:"What’s a family value you hold dear?",depth:3},
+  {text:"What’s a moment that made you feel proud of your family?",depth:3},
+  {text:"Have you ever felt inspired by a family member?",depth:3},
+  {text:"What’s a family lesson you hope to pass on?",depth:3},
+  {text:"Have you ever learned forgiveness through family interactions?",depth:3},
+  {text:"What’s a meaningful shared experience with family?",depth:3},
+  {text:"Have you ever had a family conversation that changed you?",depth:3},
+
+  // Depth 4 (20 prompts)
+  {text:"What does family mean to you on a deeper level?",depth:4},
+  {text:"Have you ever felt your family profoundly influenced your decisions?",depth:4},
+  {text:"What’s a value you inherited from your family?",depth:4},
+  {text:"Have you ever had a transformative moment with your family?",depth:4},
+  {text:"What does unconditional love in your family feel like?",depth:4},
+  {text:"How has your family shaped your worldview?",depth:4},
+  {text:"Have you ever felt deeply connected to a family member unexpectedly?",depth:4},
+  {text:"What’s a moment that taught you resilience through family?",depth:4},
+  {text:"What’s a decision influenced by your family that impacted you?",depth:4},
+  {text:"Have you ever shared a vulnerable moment with your family?",depth:4},
+  {text:"What’s a family tradition that holds deep meaning?",depth:4},
+  {text:"How do your family relationships shape your identity?",depth:4},
+  {text:"Have you ever felt a family member’s support profoundly?",depth:4},
+  {text:"What’s a lesson in forgiveness from your family?",depth:4},
+  {text:"How do you maintain family bonds through challenges?",depth:4},
+  {text:"Have you ever felt family loyalty in a powerful way?",depth:4},
+  {text:"What’s a life lesson learned from a family conflict?",depth:4},
+  {text:"How do your family connections guide your decisions?",depth:4},
+  {text:"What’s a time you felt family pride?",depth:4},
+  {text:"Have you ever had a family experience that changed your perspective?",depth:4},
+
+  // Depth 5 (20 prompts)
+  {text:"What does being part of a family truly mean to you?",depth:5},
+  {text:"Have you ever felt a family connection that changed you deeply?",depth:5},
+  {text:"What’s a moment when your family supported you unconditionally?",depth:5},
+  {text:"How do your family experiences shape your sense of self?",depth:5},
+  {text:"Have you ever experienced a transformative conversation with a family member?",depth:5},
+  {text:"What does love within your family feel like on a deep level?",depth:5},
+  {text:"Have you ever felt profoundly grateful for your family?",depth:5},
+  {text:"How do family bonds influence your life choices?",depth:5},
+  {text:"What’s a lesson in resilience from your family?",depth:5},
+  {text:"Have you ever felt understood by your family in a deep way?",depth:5},
+  {text:"What does forgiveness in family relationships mean to you?",depth:5},
+  {text:"Have you ever felt family shaped your values fundamentally?",depth:5},
+  {text:"What’s a shared family experience that moved you deeply?",depth:5},
+  {text:"Have you ever had a moment of clarity about your family relationships?",depth:5},
+  {text:"How has your family shaped your sense of purpose?",depth:5},
+  {text:"What does unconditional support from family feel like?",depth:5},
+  {text:"Have you ever learned a life lesson from a family tradition?",depth:5},
+  {text:"What’s a moment that strengthened your identity through family?",depth:5},
+  {text:"How do family connections inspire you to live meaningfully?",depth:5},
+  {text:"What does legacy mean to you in the context of family?",depth:5}
+],
+
+deep: [
+  // Depth 1 (20 prompts)
+  {text:"What’s something you’ve recently learned about yourself?",depth:1},
+  {text:"What’s a small goal you’re working on right now?",depth:1},
+  {text:"What’s a habit you’re trying to improve?",depth:1},
+  {text:"What’s a moment that made you feel content recently?",depth:1},
+  {text:"What’s a book or movie that inspired you lately?",depth:1},
+  {text:"What’s a simple joy you’ve experienced this week?",depth:1},
+  {text:"What’s a personal achievement you’re proud of?",depth:1},
+  {text:"What’s a routine that makes you feel good?",depth:1},
+  {text:"What’s a recent moment of gratitude you felt?",depth:1},
+  {text:"What’s a small change that improved your day?",depth:1},
+  {text:"What’s a song or piece of music that moved you recently?",depth:1},
+  {text:"What’s a small act of kindness you did for someone?",depth:1},
+  {text:"What’s a thought that has been on your mind lately?",depth:1},
+  {text:"What’s a question you’ve been pondering recently?",depth:1},
+  {text:"What’s a positive habit you’d like to keep?",depth:1},
+  {text:"What’s a place where you feel calm and centered?",depth:1},
+  {text:"What’s a skill you’re currently practicing?",depth:1},
+  {text:"What’s a favorite memory from this year so far?",depth:1},
+  {text:"What’s something that made you laugh recently?",depth:1},
+  {text:"What’s a small victory you celebrated this week?",depth:1},
+
+  // Depth 2 (20 prompts)
+  {text:"What’s a challenge you overcame recently?",depth:2},
+  {text:"Have you ever learned something surprising about yourself?",depth:2},
+  {text:"What’s a decision you made that changed your day?",depth:2},
+  {text:"What’s a recent moment that made you reflect?",depth:2},
+  {text:"Have you ever had an experience that shifted your perspective?",depth:2},
+  {text:"What’s a time you felt proud of yourself recently?",depth:2},
+  {text:"What’s a goal you’re slowly working towards?",depth:2},
+  {text:"Have you ever helped someone unexpectedly?",depth:2},
+  {text:"What’s a small habit that has a positive impact on your life?",depth:2},
+  {text:"What’s a lesson you learned from a recent mistake?",depth:2},
+  {text:"What’s something you’ve done recently that scared you a little?",depth:2},
+  {text:"Have you ever changed your mind about something important?",depth:2},
+  {text:"What’s a moment that made you feel alive recently?",depth:2},
+  {text:"What’s a recent realization about your emotions?",depth:2},
+  {text:"Have you ever discovered a hidden talent recently?",depth:2},
+  {text:"What’s a challenge that taught you patience?",depth:2},
+  {text:"Have you ever felt proud of how you handled a situation?",depth:2},
+  {text:"What’s a meaningful insight you gained recently?",depth:2},
+  {text:"Have you ever surprised yourself with a decision?",depth:2},
+  {text:"What’s a recent moment that made you feel gratitude?",depth:2},
+
+  // Depth 3 (20 prompts)
+  {text:"What’s a fear you’ve learned from?",depth:3},
+  {text:"Have you ever had a moment of clarity about your life path?",depth:3},
+  {text:"What’s a personal belief that has evolved recently?",depth:3},
+  {text:"Have you ever learned an important lesson from a failure?",depth:3},
+  {text:"What’s a decision that changed your perspective?",depth:3},
+  {text:"Have you ever felt deeply moved by a moment?",depth:3},
+  {text:"What’s a choice you made that shaped your growth?",depth:3},
+  {text:"What’s a challenge that helped you understand yourself better?",depth:3},
+  {text:"Have you ever experienced a moment of self-discovery?",depth:3},
+  {text:"What’s a meaningful personal insight you recently gained?",depth:3},
+  {text:"Have you ever felt a sense of purpose in a small action?",depth:3},
+  {text:"What’s a lesson about yourself that changed your thinking?",depth:3},
+  {text:"Have you ever faced a fear and learned from it?",depth:3},
+  {text:"What’s a value that guides your daily choices?",depth:3},
+  {text:"Have you ever had a moment of deep reflection?",depth:3},
+  {text:"What’s a personal change you’re proud of making?",depth:3},
+  {text:"Have you ever learned something about yourself from a friend or partner?",depth:3},
+  {text:"What’s a decision you made that challenged your comfort zone?",depth:3},
+  {text:"Have you ever discovered something surprising about your emotions?",depth:3},
+  {text:"What’s a lesson from a recent experience that impacted you?",depth:3},
+
+  // Depth 4 (20 prompts)
+  {text:"What’s a belief that shapes your worldview?",depth:4},
+  {text:"Have you ever had a transformative moment in your life?",depth:4},
+  {text:"What’s a decision that changed how you see the world?",depth:4},
+  {text:"Have you ever felt a deep emotional shift recently?",depth:4},
+  {text:"What’s a lesson about yourself that changed your perspective?",depth:4},
+  {text:"Have you ever experienced a turning point that shaped your growth?",depth:4},
+  {text:"What does personal fulfillment mean to you?",depth:4},
+  {text:"What’s a value you prioritize above others?",depth:4},
+  {text:"Have you ever made a choice that challenged your identity?",depth:4},
+  {text:"What’s a moment that made you feel deeply connected to life?",depth:4},
+  {text:"What’s a decision that strengthened your character?",depth:4},
+  {text:"Have you ever reflected on a past mistake and learned deeply?",depth:4},
+  {text:"What’s a recent insight that reshaped your priorities?",depth:4},
+  {text:"Have you ever discovered a hidden strength during adversity?",depth:4},
+  {text:"What does self-understanding mean to you?",depth:4},
+  {text:"Have you ever felt clarity about your purpose?",depth:4},
+  {text:"What’s a moment that reshaped your worldview?",depth:4},
+  {text:"What does growth feel like to you?",depth:4},
+  {text:"Have you ever had an epiphany about your life?",depth:4},
+  {text:"What’s a challenge that profoundly influenced your perspective?",depth:4},
+
+  // Depth 5 (20 prompts)
+  {text:"What does meaningful connection mean to you?",depth:5},
+  {text:"What helps you feel truly understood?",depth:5},
+  {text:"What’s a belief that guides your life?",depth:5},
+  {text:"How do you define purpose?",depth:5},
+  {text:"What’s a fear that you’ve learned from?",depth:5},
+  {text:"What does happiness feel like to you?",depth:5},
+  {text:"Have you ever had a transformative moment?",depth:5},
+  {text:"What does gratitude feel like for you?",depth:5},
+  {text:"What’s something that deeply moves you?",depth:5},
+  {text:"What does success feel like to you?",depth:5},
+  {text:"What does self-love mean to you?",depth:5},
+  {text:"What’s a personal value you will never compromise?",depth:5},
+  {text:"What’s a life lesson you want to pass on?",depth:5},
+  {text:"What does being present mean to you?",depth:5},
+  {text:"Have you ever experienced a moment of deep clarity?",depth:5},
+  {text:"What’s an experience that reshaped your worldview?",depth:5},
+  {text:"What’s a fear that has taught you resilience?",depth:5},
+  {text:"What inspires you to live fully?",depth:5},
+  {text:"What does vulnerability mean to you?",depth:5},
+  {text:"What’s a meaningful choice you made recently?",depth:5}
+]
+
+};
+
+let prompts = [];
+let index = 0;
+let currentCategory = null;
+
+function startGame() {
+  currentCategory = document.getElementById('category').value;
+  if (!PROMPTS[currentCategory] || PROMPTS[currentCategory].length === 0) {
+    alert('No prompts are available for this category.');
+    return;
+  }
+  buildPromptSet();
+  index = 0;
+  document.getElementById('home').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+  showCard();
+}
+
+function buildPromptSet() {
+  prompts = [];
+  for (let depth = 1; depth <= 5; depth++) {
+    const pool = PROMPTS[currentCategory].filter(p => p.depth === depth);
+    if(pool.length) prompts.push(pool[Math.floor(Math.random() * pool.length)]);
+  }
+  while (prompts.length < 10) {
+    const pool = PROMPTS[currentCategory];
+    prompts.push(pool[Math.floor(Math.random() * pool.length)]);
+  }
+  prompts.sort(() => Math.random() - 0.5);
+}
+
+function showCard() {
+  if (!prompts[index]) {
+    console.error('No prompt available at index', index);
+    goHome();
+    return;
+  }
+  document.getElementById('card').innerText = prompts[index].text;
+  document.getElementById('counter').innerText = `Prompt ${index + 1} of ${prompts.length}`;
+}
+
+function nextCard() {
+  index++;
+  if (index >= prompts.length) goHome();
+  else showCard();
+}
+
+function shuffleAgain() {
+  buildPromptSet();
+  index = 0;
+  showCard();
+}
+
+function goHome() {
+  document.getElementById('game').classList.remove('active');
+  document.getElementById('home').classList.add('active');
+}
+</script>
+
+</body>
+</html>
